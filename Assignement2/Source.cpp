@@ -5,92 +5,87 @@
 #include <sstream>
 #include <vector>
 #include <string>
+#include <iomanip> // For std::setw
 
+// Struct to hold student data
 struct STUDENT_DATA {
-    std::string first_name;
-    std::string last_name;
-    std::string email;
+    std::string firstName;
+    std::string lastName;
+    std::string email; // Store email
 };
 
 int main() {
-    // Vector to store student objects
     std::vector<STUDENT_DATA> students;
 
-    // Print application mode
-#ifdef PRE_RELEASE
-    std::cout << "Running Pre-Release Version" << std::endl;
-#else
-    std::cout << "Running Standard Version" << std::endl;
-#endif
-
-    // Relative path to the StudentData.txt file
-    std::string file_path = "StudentData.txt";
-
-    // Open the StudentData.txt file
-    std::ifstream file(file_path);
-
-    if (!file.is_open()) {
-        std::cerr << "Error: Unable to open the file at path: " << file_path << std::endl;
-        std::cerr << "Make sure the file is located in the correct directory." << std::endl;
-        return 1;
+    // Step #3: Read StudentData.txt
+    std::ifstream inputFile("StudentData.txt");
+    if (!inputFile) {
+        std::cerr << "Unable to open file StudentData.txt" << std::endl;
+        return 1; // Exit if file can't be opened
     }
 
     std::string line;
-
-    // Read each line from the file
-    while (std::getline(file, line)) {
-        std::stringstream ss(line);
-        std::string first_name, last_name;
-
-        // Parse the line (assuming first and last names are separated by a comma)
-        if (std::getline(ss, first_name, ',') && std::getline(ss, last_name)) {
-            STUDENT_DATA student = { first_name, last_name, "" };  // email will be added later in pre-release
-            students.push_back(student);
-        }
-        else {
-            std::cerr << "Warning: Skipping malformed line: " << line << std::endl;
-        }
+    while (std::getline(inputFile, line)) {
+        std::istringstream iss(line);
+        std::string firstName, lastName;
+        std::getline(iss, firstName, ','); // Read first name
+        std::getline(iss, lastName);        // Read last name
+        students.push_back({ firstName, lastName, "" }); // Initialize with empty email
     }
 
-    file.close();
+    inputFile.close();
 
+    // Step #4: Print student information
+#ifdef _DEBUG
 #ifdef PRE_RELEASE
-    // Add email addresses in Pre-Release mode
-    std::ifstream email_file("StudentData_Emails.txt");
+    // In Debug Pre-Release Mode: Read emails and print names with emails
+    std::cout << "Debug Pre-Release Mode: Student List with Emails:" << std::endl;
+    std::cout << std::left << std::setw(20) << "First Name"
+        << std::setw(20) << "Last Name"
+        << "Email Address" << std::endl;
+    std::cout << std::string(60, '-') << std::endl; // Separator line
 
-    if (!email_file.is_open()) {
-        std::cerr << "Error: Unable to open the email file." << std::endl;
-        return 1;
+    std::ifstream emailFile("StudentData_Emails.txt");
+    if (!emailFile) {
+        std::cerr << "Unable to open file StudentData_Emails.txt" << std::endl;
+        return 1; // Exit if file can't be opened
     }
 
-    // Read the email data and assign to students
-    while (std::getline(email_file, line)) {
-        std::stringstream ss(line);
-        std::string first_name, last_name, email;
-
-        // Parse the line (assuming first name, last name, and email are separated by commas)
-        if (std::getline(ss, first_name, ',') && std::getline(ss, last_name, ',') && std::getline(ss, email)) {
-            for (auto& student : students) {
-                if (student.first_name == first_name && student.last_name == last_name) {
-                    student.email = email;
-                    break;
-                }
-            }
-        }
-        else {
-            std::cerr << "Warning: Skipping malformed email line: " << line << std::endl;
-        }
+    size_t index = 0;
+    while (std::getline(emailFile, line) && index < students.size()) {
+        // Directly assign only the email address from the file to the student email field
+        students[index].email = line; // Store only the email
+        ++index;
     }
 
-    email_file.close();
+    emailFile.close();
 
-    // Print out the students with emails
-    std::cout << "Students with Emails Loaded:" << std::endl;
+    // Print names with emails correctly formatted
     for (const auto& student : students) {
-        std::cout << "First Name: " << student.first_name << ", Last Name: " << student.last_name
-            << ", Email: " << student.email << std::endl;
+        std::cout <<student.email << std::endl; // Correctly show only email
     }
+
+#else
+    // In Debug Mode (without PRE_RELEASE): Just print student names
+    std::cout << "Debug Mode: Student List:" << std::endl;
+    std::cout << std::left << std::setw(20) << "First Name"
+        << std::setw(20) << "Last Name" << std::endl;
+    std::cout << std::string(40, '-') << std::endl; // Separator line
+
+    for (const auto& student : students) {
+        std::cout << std::left << std::setw(20) << student.firstName
+            << std::setw(20) << student.lastName << std::endl;
+    }
+#endif // PRE_RELEASE
+
+#else
+    // Non-debug messages
+#ifdef PRE_RELEASE
+    std::cout << "Running in Pre-Release Mode" << std::endl;
+#else
+    std::cout << "Running in Standard Mode" << std::endl;
 #endif
+#endif // _DEBUG
 
     return 0;
 }
